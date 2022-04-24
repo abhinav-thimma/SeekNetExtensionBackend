@@ -6,6 +6,7 @@ import db_handler
 import urllib
 import os
 import json
+from BM25 import BM25
 
 app = Flask(__name__)
 CORS(app)
@@ -62,6 +63,21 @@ def logClick():
     client.log_action(ip_address, 'CLICK CONNECTION', {'id': connection_id})
     return {}
 
+@app.route('/search', methods=['POST'])
+def search():
+    '''
+    Called from front end when user searches in context of a url
+    '''
+    req = request.get_json()
+    query = req['query']
+    url = req['url']
+    
+    bm25 = BM25(client)
+    results = bm25.search(query)
+
+    # preprocessing the results
+    results = [{'url': result['tgt_url'], 'text': result['text']} for result in results]
+    return {'results': results, 'count': len(results)}
 
 def validate_url(url):
     tokens = [urllib.parse.urlparse(url) for url in (url)]

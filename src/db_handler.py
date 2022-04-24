@@ -48,3 +48,15 @@ class Client:
 
         connections, _ = self.get_connections(src_url)
         return connections, status, str(connection_id)
+    
+    def get_all_connections(self):
+        results = []
+        try:
+            cursor = self.connections.find()
+            for conn in cursor:
+                conn['_id'] = str(conn['_id'])
+                results.append(conn)
+            return results
+        except Exception as e:
+            print('Error getting connections :', e)
+            return results
