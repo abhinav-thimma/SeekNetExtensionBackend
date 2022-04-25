@@ -42,9 +42,14 @@ def createConnection():
     Called when user creates a connection
     '''
     ip_address = request.remote_addr
-    text = html.escape(request.form['connection_text'])
-    tgt_url = html.escape(request.form['connection_url'])
-    src_url = html.escape(request.form['current_url'])
+    # text = html.escape(request.form['connection_text'])
+    # tgt_url = html.escape(request.form['connection_url'])
+    # src_url = html.escape(request.form['current_url'])
+    req = request.get_json()
+    text = req['text']
+    src_url = req['src_url']
+    tgt_url = req['tgt_url']
+    print(f'Text: {text}, Source URL: {src_url}, Target URL: {tgt_url}')
 
     updated_connections, status, connection_id = client.create_connection(text, src_url, tgt_url)
     if status:
@@ -58,9 +63,12 @@ def logClick():
     '''
     Called to record the clicks per IP address
     '''
+    # ip_address = request.remote_addr
+    # connection_id = request.form['id']
     ip_address = request.remote_addr
-    connection_id = request.form['id']
-    client.log_action(ip_address, 'CLICK CONNECTION', {'id': connection_id})
+    req = request.get_json()
+    id = req['id']
+    client.log_action(ip_address, 'CLICK CONNECTION', {'id': id})
     return {}
 
 @app.route('/search', methods=['POST'])
@@ -71,12 +79,13 @@ def search():
     req = request.get_json()
     query = req['query']
     url = req['url']
+    print(f'Query: {query}')
     
     bm25 = BM25(client)
     results = bm25.search(query)
 
     # preprocessing the results
-    results = [{'url': result['tgt_url'], 'text': result['text']} for result in results]
+    results = [{'url': result['tgt_url'], 'text': result['text'], 'id': result['_id']} for result in results]
     return {'results': results, 'count': len(results)}
 
 def validate_url(url):
