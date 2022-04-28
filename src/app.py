@@ -42,9 +42,6 @@ def createConnection():
     Called when user creates a connection
     '''
     ip_address = request.remote_addr
-    # text = html.escape(request.form['connection_text'])
-    # tgt_url = html.escape(request.form['connection_url'])
-    # src_url = html.escape(request.form['current_url'])
     req = request.get_json()
     text = req['text']
     src_url = req['src_url']
@@ -56,20 +53,6 @@ def createConnection():
         client.log_action(ip_address, 'CREATE CONNECTION', {'id': connection_id})
 
     return jsonify({'status': status, 'payload': {'connections': updated_connections}})
-
-
-@app.route('/log', methods=['POST'])
-def logClick():
-    '''
-    Called to record the clicks per IP address
-    '''
-    # ip_address = request.remote_addr
-    # connection_id = request.form['id']
-    ip_address = request.remote_addr
-    req = request.get_json()
-    id = req['id']
-    client.log_action(ip_address, 'CLICK CONNECTION', {'id': id})
-    return {}
 
 @app.route('/search', methods=['POST'])
 def search():
@@ -88,6 +71,22 @@ def search():
     results = [{'url': result['tgt_url'], 'text': result['text'], 'id': result['_id']} for result in results]
     return {'results': results, 'count': len(results)}
 
+@app.route('/log_clicks', methods=['POST'])
+def log_clicks():
+    '''
+    Called from front end when user clicks on a connection
+    '''
+    ip_address = request.remote_addr
+    req = request.get_json()
+    src_url = req['src_url']
+    tgt_url = req['tgt_url']
+    search_text = req['search_text']
+
+    print(f'Logging Click | Src URL: {src_url}, Tgt URL: {tgt_url}, Search Text: {search_text}')
+
+    client.log_action(ip_address, 'CLICK LINK', {'src_url': src_url, 'tgt_url': tgt_url, 'search_text': search_text})
+    return {}
+    
 def validate_url(url):
     tokens = [urllib.parse.urlparse(url) for url in (url)]
     min_attributes = ('scheme', 'netloc')
