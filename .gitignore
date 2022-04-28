@@ -1,3 +1,4 @@
 env.list
 src/__pycache__/*
 src/config.json
+.DS_Store
