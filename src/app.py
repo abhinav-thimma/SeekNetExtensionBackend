@@ -7,6 +7,7 @@ import urllib
 import os
 import json
 from BM25 import BM25
+from ddg_api import ddg_search
 
 app = Flask(__name__)
 CORS(app)
@@ -34,6 +35,16 @@ def getConnections():
     connections, status = client.get_connections(url)
 
     return jsonify({'status': status, 'payload': {'connections': connections}})
+
+@app.route('/ddg', methods=['GET'])
+def getDDGResults():
+    '''
+    Called when user loads the extension in browser, returns list of questions based on tab URL
+    '''
+    query_words = request.args['query']
+    ddg_results = ddg_search(query_words)
+
+    return jsonify({'results': ddg_results})
 
 
 @app.route('/connect', methods=['POST'])
