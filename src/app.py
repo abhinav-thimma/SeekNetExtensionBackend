@@ -8,7 +8,9 @@ import os
 import json
 from BM25 import BM25
 from ddg_api import ddg_search
-from scraper import scrape_webpage
+
+
+LOG_TO_CONN_THRESHOLD = 2
 
 app = Flask(__name__)
 CORS(app)
@@ -32,7 +34,6 @@ def getConnections():
     url = request.args['url']
     ip_address = request.remote_addr
     
-    client.log_action(ip_address, 'VIEW CONNECTIONS', {'src_url': url})
     print('Viewed connections for: ', url)
 
     connections, status = client.get_connections(url)
@@ -64,10 +65,7 @@ def createConnection():
     tgt_url = req['tgt_url']
     print(f'Text: {text}, Source URL: {src_url}, Target URL: {tgt_url}')
 
-    # scrape the target url content
-    target_title, target_body = scrape_webpage(tgt_url)
-
-    updated_connections, status, connection_id = client.create_connection(text, src_url, tgt_url, target_title, target_body)
+    updated_connections, status, connection_id = client.create_connection(text, src_url, tgt_url)
     if status:
         client.log_action(ip_address, 'CREATE CONNECTION', {'id': connection_id})
 
@@ -105,9 +103,14 @@ def log_clicks():
 
     print(f'Logging Click | Src URL: {src_url}, Tgt URL: {tgt_url}, Search Text: {search_text}')
 
+    results = client.get_clicks_with_matching_urls(src_url, tgt_url)
+    if(len(results) >= LOG_TO_CONN_THRESHOLD):
+        text = max([r['search_text'] for r in results], key = len) if(search_text is None or len(search_text) == 0) else search_text
+        client.create_connection(text, src_url, tgt_url)
+
     client.log_action(ip_address, 'CLICK LINK', {'src_url': src_url, 'tgt_url': tgt_url, 'search_text': search_text})
     return {}
-    
+
 def validate_url(url):
     tokens = [urllib.parse.urlparse(url) for url in (url)]
     min_attributes = ('scheme', 'netloc')

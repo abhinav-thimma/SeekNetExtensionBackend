@@ -1,5 +1,6 @@
 import pymongo
 import time
+from scraper import scrape_webpage
 
 
 class Client:
@@ -39,10 +40,25 @@ class Client:
             return results, 0
 
 
+    def get_clicks_with_matching_urls(self, src_url, tgt_url):
+        cursor = self.logging.find({'action': 'CLICK LINK','data.src_url': src_url, 'data.tgt_url': tgt_url})
+        results = []
+        for conn in cursor:
+            results.append(conn['data'])
+        
+        return results
+
+
     def create_connection(self, text, src_url, tgt_url, target_title=None, target_body=None):
         '''
         Creates a connection in `extension_connections` collection in mongodb.
         '''
+        try:
+            # scrape the target url content
+            target_title, target_body = scrape_webpage(tgt_url)
+        except:
+            print('Error scraping webpage')
+            
         try:
             connection_id = self.connections.insert_one({"time": time.time(),
                                      "src_url": src_url,
