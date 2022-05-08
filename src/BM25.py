@@ -13,9 +13,24 @@ class BM25:
         self.bm25 = None
     
     def get_data_from_mongodb_and_tokenize(self):
+        '''
+        Gets the connection data from `extension_connections` collection in mongodb and preprocesses it for BM25 ranking.
+        '''
         self.data = self.mongodb_client.get_all_connections()
-        print(self.data)
-        processed_data = [doc['text'].lower() for doc in self.data]
+        processed_data = []
+
+        for doc in self.data:
+            doc_text = doc['text'].lower()
+            doc_body = doc['target_body'].lower() if('target_body' in doc)  else None
+            doc_title = doc['target_title'].lower() if('target_title' in doc)  else None
+
+            total_text = doc_text
+            if(doc_title is not None):
+                total_text += doc_title
+            if(doc_body is not None):
+                total_text += doc_body
+            processed_data.append(total_text)
+
 
         #tokenizing
         nlp = spacy.load("en_core_web_sm")
@@ -28,6 +43,9 @@ class BM25:
         self.bm25 = BM25Okapi(self.tok_text)
 
     def search(self, query):
+        '''
+        Ranks documents and returns the top ranked documents for a given query.
+        '''
         if(self.bm25 is None):
             self.get_data_from_mongodb_and_tokenize()
 

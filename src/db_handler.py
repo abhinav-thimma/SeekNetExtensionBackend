@@ -9,6 +9,9 @@ class Client:
 
 
     def log_action(self, ip_address, action, data):
+        '''
+        Used to store user actions like clicks to monogoDB.
+        '''
         try:
             self.logging.insert_one({'ip_address': ip_address,
                                      'time': time.time(),
@@ -21,6 +24,9 @@ class Client:
             return False
 
     def get_connections(self, url):
+        '''
+        Fetches all connections having src_url as url from `extension_connections` collection in mongodb.
+        '''
         results = []
         try:
             cursor = self.connections.find({'src_url': url})
@@ -33,12 +39,17 @@ class Client:
             return results, 0
 
 
-    def create_connection(self, text, src_url, tgt_url):
+    def create_connection(self, text, src_url, tgt_url, target_title=None, target_body=None):
+        '''
+        Creates a connection in `extension_connections` collection in mongodb.
+        '''
         try:
             connection_id = self.connections.insert_one({"time": time.time(),
                                      "src_url": src_url,
                                      "tgt_url": tgt_url,
                                      "text": text,
+                                     "target_title": target_title,
+                                     "target_body": target_body
                                     }).inserted_id
             status = 1
         except Exception as e:
@@ -50,6 +61,9 @@ class Client:
         return connections, status, str(connection_id)
     
     def get_all_connections(self):
+        '''
+        Featches all the connections from `extension_connections` collection in mongodb.
+        '''
         results = []
         try:
             cursor = self.connections.find()

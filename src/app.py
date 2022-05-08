@@ -8,6 +8,7 @@ import os
 import json
 from BM25 import BM25
 from ddg_api import ddg_search
+from scraper import scrape_webpage
 
 app = Flask(__name__)
 CORS(app)
@@ -25,21 +26,24 @@ client = db_handler.Client(connection_string, db_name)
 @app.route('/', methods=['GET'])
 def getConnections():
     '''
-    Called when user loads the extension in browser, returns list of questions based on tab URL
+    Called when user loads the extension in browser.
+    Returns: list of previously made connections based on tab URL
     '''
     url = request.args['url']
     ip_address = request.remote_addr
     
     client.log_action(ip_address, 'VIEW CONNECTIONS', {'src_url': url})
+    print('Viewed connections for: ', url)
 
     connections, status = client.get_connections(url)
-
+    print(connections)
     return jsonify({'status': status, 'payload': {'connections': connections}})
 
 @app.route('/ddg', methods=['GET'])
 def getDDGResults():
     '''
-    Called when user loads the extension in browser, returns list of questions based on tab URL
+    Called when user searches for a query in extension. This API calls the DuckDuckGo search API.
+    Returns: list of search results from DuckDuckGo
     '''
     query_words = request.args['query']
     ddg_results = ddg_search(query_words)
@@ -51,6 +55,7 @@ def getDDGResults():
 def createConnection():
     '''
     Called when user creates a connection
+    Returns: status of connection creation
     '''
     ip_address = request.remote_addr
     req = request.get_json()
@@ -59,7 +64,10 @@ def createConnection():
     tgt_url = req['tgt_url']
     print(f'Text: {text}, Source URL: {src_url}, Target URL: {tgt_url}')
 
-    updated_connections, status, connection_id = client.create_connection(text, src_url, tgt_url)
+    # scrape the target url content
+    target_title, target_body = scrape_webpage(tgt_url)
+
+    updated_connections, status, connection_id = client.create_connection(text, src_url, tgt_url, target_title, target_body)
     if status:
         client.log_action(ip_address, 'CREATE CONNECTION', {'id': connection_id})
 
@@ -69,6 +77,7 @@ def createConnection():
 def search():
     '''
     Called from front end when user searches in context of a url
+    Returns: list of search results from database
     '''
     req = request.get_json()
     query = req['query']
@@ -85,7 +94,8 @@ def search():
 @app.route('/log_clicks', methods=['POST'])
 def log_clicks():
     '''
-    Called from front end when user clicks on a connection
+    Called from front end when user clicks on a connection. Log conenctions for creating connections automatically.
+    Returns: None
     '''
     ip_address = request.remote_addr
     req = request.get_json()

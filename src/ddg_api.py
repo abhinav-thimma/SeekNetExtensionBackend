@@ -1,6 +1,9 @@
 from duckduckgo_search import ddg
 
 def ddg_search(query_words):
+    '''
+    Calls the DuckDuckGo search API for query_words and returns the results.
+    '''
     keywords = query_words
     results = ddg(keywords, region='wt-wt', safesearch='Moderate', time='y', max_results=3)
     modified_results = []
