@@ -1,5 +1,5 @@
 from multiprocessing import connection
-from flask import Flask, jsonify, request
+from flask import Flask, jsonify, request, Response
 from flask_cors import CORS
 import html
 import db_handler
@@ -38,7 +38,12 @@ def getConnections():
 
     connections, status = client.get_connections(url)
     print(connections)
-    return jsonify({'status': status, 'payload': {'connections': connections}})
+
+    resp = Response(json.dumps({'status': status, 'payload': {'connections': connections}}))
+    resp.headers['Access-Control-Allow-Origin'] = '*'
+    resp.headers['Access-Control-Allow-Credentials'] = True
+    resp.headers['Content-Type'] = 'application/json'
+    return resp
 
 @app.route('/ddg', methods=['GET'])
 def getDDGResults():
@@ -49,7 +54,12 @@ def getDDGResults():
     query_words = request.args['query']
     ddg_results = ddg_search(query_words)
 
-    return jsonify({'results': ddg_results})
+    resp = Response(json.dumps({'results': ddg_results}))
+    resp.headers['Access-Control-Allow-Origin'] = '*'
+    resp.headers['Access-Control-Allow-Credentials'] = True
+    resp.headers['Content-Type'] = 'application/json'
+
+    return resp
 
 
 @app.route('/connect', methods=['POST'])
@@ -68,8 +78,13 @@ def createConnection():
     updated_connections, status, connection_id = client.create_connection(text, src_url, tgt_url)
     if status:
         client.log_action(ip_address, 'CREATE CONNECTION', {'id': connection_id})
+    
+    resp = Response(json.dumps({'status': status, 'payload': {'connections': updated_connections}}))
+    resp.headers['Access-Control-Allow-Origin'] = '*'
+    resp.headers['Access-Control-Allow-Credentials'] = True
+    resp.headers['Content-Type'] = 'application/json'
 
-    return jsonify({'status': status, 'payload': {'connections': updated_connections}})
+    return resp
 
 @app.route('/search', methods=['POST'])
 def search():
@@ -87,7 +102,12 @@ def search():
 
     # preprocessing the results
     results = [{'url': result['tgt_url'], 'text': result['text'], 'id': result['_id']} for result in results]
-    return {'results': results, 'count': len(results)}
+    
+    resp = Response(json.dumps({'results': results, 'count': len(results)}))
+    resp.headers['Access-Control-Allow-Origin'] = '*'
+    resp.headers['Access-Control-Allow-Credentials'] = True
+    resp.headers['Content-Type'] = 'application/json'
+    return resp
 
 @app.route('/log_clicks', methods=['POST'])
 def log_clicks():
@@ -109,7 +129,12 @@ def log_clicks():
         client.create_connection(text, src_url, tgt_url)
 
     client.log_action(ip_address, 'CLICK LINK', {'src_url': src_url, 'tgt_url': tgt_url, 'search_text': search_text})
-    return {}
+    
+    resp = Response(json.dumps({}))
+    resp.headers['Access-Control-Allow-Origin'] = '*'
+    resp.headers['Access-Control-Allow-Credentials'] = True
+    resp.headers['Content-Type'] = 'application/json'
+    return resp
 
 def validate_url(url):
     tokens = [urllib.parse.urlparse(url) for url in (url)]
