@@ -20,10 +20,55 @@ This repository is the backend flask application for the SeekNet Chrome extensio
     }
 ```
 2. Replace <CONNECTION_URL> with the connection URL for your mongo DB instance
-3. Replace DB_NAME with "seeknet"
+3. Replace <DB_NAME> with "seeknet"
 
 # To run the backend:
 ```
 > cd src
 > flask run
 ```
+
+## API documentation summary:
+
+1. GET '/?url=...':  Returns a list of connections with the source url matching the given url.
+  
+    Parameters: 
+    - url: Query parameter indicating the current URL  
+
+2. GET '/ddg?query=...': Returns top DuckDuckGo search results for a given query
+  
+    Parameters:
+    - query: Query parameter indicating user query
+
+3. POST '/connect': Connects a `src_url` with a `target_url` using the `text` 
+
+    Parameters:
+    - Request Body: 
+      ```
+      {
+        "src_url": ...,
+        "tgt_url": ...,
+        "text": ...
+      }
+      ```
+4. POST '/search': Searches for a query in Seeknet connections
+
+    Parameters:
+    - Request Body: 
+      ```
+      {
+        "query": ...,
+        "url": ...
+      }
+      ```
+5. POST '/log_clicks': logs user actions like clicking on a link
+
+    Parameters:
+    - Request Body: 
+      ```
+      {
+        "src_url": ...,
+        "tgt_url": ...,
+        "search_text": ...
+      }
+      ```
